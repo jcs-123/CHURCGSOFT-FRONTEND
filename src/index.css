@@ -1,0 +1,45 @@
+/* Header css */
+
+.custom-navbar {
+  background-color: #5a559e; /* Exact match from screenshot */
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.navbar-brand, 
+.navbar-nav .nav-link, 
+.navbar-nav .dropdown-toggle {
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu > .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+}
+
+
+/* footer */
+.custom-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  background-color: #fff;
+  border-top: 1px solid #ccc;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #333;
+  z-index: 100;
+}
+/* family search page */
+.column-toggle-item {
+  padding: 6px 12px;
+  white-space: nowrap;
+}
