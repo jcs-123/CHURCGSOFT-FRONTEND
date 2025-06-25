@@ -1,16 +1,70 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Navbar, Nav, NavDropdown, Container } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaCogs, FaChurch, FaUsers, FaClock, FaBook, FaUserShield,
   FaUserCog, FaTint, FaHeart, FaHome, FaBuilding, FaGraduationCap, FaCross,
   FaInfoCircle, FaIdBadge, FaUserTie, FaFileAlt, FaRegAddressBook, FaSearch,
   FaUserSlash, FaUserCheck, FaBirthdayCake, FaSearchPlus, FaList, FaUserPlus , FaUser, FaEnvelope, FaKey, FaSignOutAlt,
-  FaPen
+  FaPen,
+  FaPlus
 } from 'react-icons/fa';
+import ChangePasswordModal from '../modal/ChangePasswordModal';
 
 
 function Header() {
+    const userName = localStorage.getItem('userName') || 'Admin';
+const userEmail = localStorage.getItem('userEmail') || 'admin@example.com';
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear(); // Clear all saved user data
+    navigate('/login');   // Redirect to login
+  };
+ const [showChangeModal, setShowChangeModal] = useState(false);
+
+  
+const handlePasswordChange = async ({ currentPassword, newPassword }) => {
+  try {
+    const userEmail = localStorage.getItem('userEmail') || 'admin@example.com';
+
+    const response = await fetch('http://localhost:4000/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: userEmail,
+        oldPassword: currentPassword,
+        newPassword
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Password changed:', data.message);
+      return true;
+    } else {
+      console.error('Password change failed:', data.message);
+      return false;
+    }
+
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return false;
+  }
+};
+
+
+const [role, setRole] = useState('');
+
+useEffect(() => {
+  const storedRole = localStorage.getItem('userRole');
+  setRole(storedRole);
+}, []);
+
   return (
     <div><Navbar expand="lg" className="custom-navbar" variant="dark">
       <Container fluid>
@@ -18,7 +72,7 @@ function Header() {
         <Navbar.Toggle aria-controls="navbar-nav" />
         <Navbar.Collapse id="navbar-nav">
           <Nav className="me-auto">
-       <Nav.Link  ><FaTachometerAlt />    <Link style={{textDecoration:"none",color:"white"}} to={'/'}>  Dashboard</Link></Nav.Link>
+       <Nav.Link  ><FaTachometerAlt />    <Link style={{textDecoration:"none",color:"white"}} to={'/dashboard'}>  Dashboard</Link></Nav.Link>
          
          
           <NavDropdown title={<><FaCogs /> General Settings</>} id="settings-dropdown">
@@ -35,14 +89,42 @@ function Header() {
   <NavDropdown.Item href=""><FaCross className="me-2" /> Tomb Master Management</NavDropdown.Item>
 </NavDropdown>
 
-         <NavDropdown title={<><FaChurch /> Parish</>} id="parish-dropdown">
-  <NavDropdown.Item href="#parish-details"><FaInfoCircle className="me-2" /> Parish Details</NavDropdown.Item>
-  <NavDropdown.Item href="#designation"><FaIdBadge className="me-2" /> Designation Management</NavDropdown.Item>
-  <NavDropdown.Item href="#administration"><FaUserTie className="me-2" /> Administration Management</NavDropdown.Item>
-  <NavDropdown.Item href="#admin-report"><FaFileAlt className="me-2" /> Administration Report</NavDropdown.Item>
-</NavDropdown>
+    <NavDropdown title={<><FaChurch /> Parish</>} id="parish-dropdown">
+      <NavDropdown.Item href="#parish-details">
+        <FaInfoCircle className="me-2" /> Parish Details
+      </NavDropdown.Item>
 
+      {role === 'Admin' ? (
+        <>
+          <NavDropdown.Item href="#designation">
+            <FaIdBadge className="me-2" /> Designation Management
+          </NavDropdown.Item>
 
+          <NavDropdown.Item href="#administration">
+            <FaUserTie className="me-2" /> Administration Management
+          </NavDropdown.Item>
+
+          <NavDropdown.Item href="#admin-report">
+            <FaFileAlt className="me-2" /> Administration Report
+          </NavDropdown.Item>
+
+        
+        </>
+      ) : (
+        <>
+          <NavDropdown.Item href="#administration">
+            <FaUserTie className="me-2" /> Administration Management
+          </NavDropdown.Item>
+
+          <NavDropdown.Item href="#admin-report">
+            <FaFileAlt className="me-2" /> Administration Report
+          </NavDropdown.Item>
+            <NavDropdown.Item>
+            <FaPlus className="me-2" /> <Link style={{textDecoration:"none",color:"black"}} to={'/Add-parish'}>   Add Parish</Link>
+          </NavDropdown.Item>
+        </>
+      )}
+    </NavDropdown>
 
 
 
@@ -132,28 +214,35 @@ function Header() {
 
           </Nav>
           <Nav>
- <NavDropdown
-      title={<><FaBook className="me-2" /> Admin</>}
-      id="reports-dropdown"
-      align="end" // Aligns dropdown to the right for better UX
+  <NavDropdown
+      title={<><FaBook className="me-2" />  {userName}</>}
+      id="admin-dropdown"
+      align="end"
       className="text-wrap"
     >
-      {/* User Info - Static */}
+      {/* Display user info */}
       <NavDropdown.Header className="text-muted small">
-        <FaUser className="me-2" /> Admin Name
+        <FaUser className="me-2" /> {userName}
       </NavDropdown.Header>
       <NavDropdown.Header className="text-muted small">
-        <FaEnvelope className="me-2" /> admin@example.com
+        <FaEnvelope className="me-2" /> {userEmail}
       </NavDropdown.Header>
       <NavDropdown.Divider />
 
       {/* Actions */}
-      <NavDropdown.Item href="#change-password">
-        <FaKey className="me-2" /> Change Password
-      </NavDropdown.Item>
-      <NavDropdown.Item href="#logout">
-        <FaSignOutAlt className="me-2" /> Logout
-      </NavDropdown.Item>
+        <NavDropdown.Item onClick={() => setShowChangeModal(true)}>
+          <FaKey className="me-2" /> Change Password
+        </NavDropdown.Item>
+        <NavDropdown.Item onClick={handleLogout}>
+          <FaSignOutAlt className="me-2" /> Logout
+        </NavDropdown.Item>
+     
+
+      <ChangePasswordModal
+        show={showChangeModal}
+        onHide={() => setShowChangeModal(false)}
+        onSubmit={handlePasswordChange}
+      />
     </NavDropdown>
           </Nav>
         </Navbar.Collapse>

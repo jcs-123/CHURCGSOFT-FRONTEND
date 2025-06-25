@@ -8,6 +8,7 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
 const keralaDistricts = [
   "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha",
   "Kottayam", "Idukki", "Ernakulam", "Thrissur", "Palakkad",
@@ -33,9 +34,8 @@ const FamilyUnits = () => {
           axios.get('http://localhost:4000/get-parish'),
           axios.get('http://localhost:4000/get-family-units')
         ]);
-
         setParishList(parishRes.data.map(p => ({ label: p.parish, value: p.parish })));
-        setUnits(unitsRes.data);
+        setUnits(Array.isArray(unitsRes.data) ? unitsRes.data : unitsRes.data.units || []);
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -91,12 +91,13 @@ const FamilyUnits = () => {
   };
 
   const filteredUnits = useMemo(() => {
+    if (!Array.isArray(units)) return [];
     return units.filter(unit => {
       const matchParish = filterParish ? unit.parish === filterParish.value : true;
       const matchStatus = filterStatus ? unit.status === filterStatus : true;
-      const matchSearch = searchText
-        ? unit.code?.toLowerCase().includes(searchText.toLowerCase()) ||
-          unit.name?.toLowerCase().includes(searchText.toLowerCase())
+      const search = searchText.toLowerCase();
+      const matchSearch = search
+        ? unit.code?.toLowerCase().includes(search) || unit.unitname?.toLowerCase().includes(search)
         : true;
       return matchParish && matchStatus && matchSearch;
     });
@@ -107,47 +108,38 @@ const FamilyUnits = () => {
   const currentUnits = filteredUnits.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredUnits.length / itemsPerPage);
 
-  // Export to Excel function
   const exportToExcel = () => {
-    const exportData = filteredUnits.map(({ id, ...rest }) => rest); // Remove id for export
-
+    const exportData = filteredUnits.map(({ id, ...rest }) => rest);
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'FamilyUnits');
-
     XLSX.writeFile(workbook, 'family_units.xlsx');
   };
 
-  // Print PDF function
+  const printPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Family Units List', 14, 22);
+    const tableColumn = ['Parish', 'Code', 'Name', 'Pincode', 'District', 'Status'];
+    const tableRows = filteredUnits.map(unit => [
+      unit.parish || '',
+      unit.code || '',
+      unit.unitname || '',
+      unit.pincode || '',
+      unit.district || '',
+      unit.status || '',
+    ]);
+    autoTable(doc, {
+      startY: 30,
+      head: [tableColumn],
+      body: tableRows,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [22, 160, 133] },
+    });
+    doc.save('family_units.pdf');
+  };
 
-const printPDF = () => {
-  const doc = new jsPDF();
-
-  doc.setFontSize(18);
-  doc.text('Family Units List', 14, 22);
-
-  const tableColumn = ['Parish', 'Code', 'Name', 'Pincode', 'District', 'Status'];
-  const tableRows = filteredUnits.map(unit => [
-    unit.parish || '',
-    unit.code || '',
-    unit.name || '',
-    unit.pincode || '',
-    unit.district || '',
-    unit.status || '',
-  ]);
-
-  // Use autoTable function passing doc as the first param
-  autoTable(doc, {
-    startY: 30,
-    head: [tableColumn],
-    body: tableRows,
-    theme: 'grid',
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [22, 160, 133] },
-  });
-
-  doc.save('family_units.pdf');
-};
   return (
     <Container fluid className="p-4">
       <Row className="g-4 align-items-stretch">
@@ -177,7 +169,7 @@ const printPDF = () => {
                 <Col md={3}>
                   <Form.Group>
                     <Form.Label>Unit Name *</Form.Label>
-                    <Form.Control type="text" name="name" value={formData.name || ''} onChange={handleFormChange} />
+                    <Form.Control type="text" name="unitname" value={formData.unitname || ''} onChange={handleFormChange} />
                   </Form.Group>
                 </Col>
               </Row>
@@ -259,14 +251,9 @@ const printPDF = () => {
                   </Col>
                 </Row>
 
-                {/* Buttons for Export */}
                 <div className="mb-3 d-flex gap-2">
-                  <Button variant="success" onClick={exportToExcel}>
-                    Export Excel
-                  </Button>
-                  <Button variant="danger" onClick={printPDF}>
-                    Print PDF
-                  </Button>
+                  <Button variant="success" onClick={exportToExcel}>Export Excel</Button>
+                  <Button variant="danger" onClick={printPDF}>Print PDF</Button>
                 </div>
 
                 <Table striped bordered hover responsive size="sm">
@@ -286,7 +273,7 @@ const printPDF = () => {
                         <td>{indexOfFirst + i + 1}</td>
                         <td>{unit.parish}</td>
                         <td>{unit.code}</td>
-                        <td>{unit.name}</td>
+                        <td>{unit.unitname}</td>
                         <td>{unit.status}</td>
                         <td>
                           <Button size="sm" variant="success" onClick={() => handleEdit(unit)}>Edit</Button>

@@ -92,10 +92,10 @@ function FamilyCardRegister() {
 useEffect(() => {
   axios.get('http://localhost:4000/get-family-units')
     .then((response) => {
-      if (response.data.success) {
-        setFamilyUnits(response.data.data);  // ✅ Access the actual array
+      if (Array.isArray(response.data)) {
+        setFamilyUnits(response.data);
       } else {
-        console.error('Failed to fetch family units');
+        console.error('Invalid response format:', response.data);
       }
     })
     .catch((error) => {
@@ -103,6 +103,7 @@ useEffect(() => {
     })
     .finally(() => setLoading(false));
 }, []);
+
 
 // get parsih
   useEffect(() => {
@@ -340,28 +341,30 @@ const handleSubmit = async (e) => {
                   />
                 </Form.Group>
 
-       <Form.Group className="mb-3">
+      <Form.Group className="mb-3">
   <Form.Label>Unit Name *</Form.Label>
-  {loading ? (
-    <Form.Control as="select" disabled>
+  <Form.Select
+    name="unitName"
+    value={formData.unitName}
+    onChange={handleChange}
+    required
+    disabled={loading}
+  >
+    {loading ? (
       <option>Loading units...</option>
-    </Form.Control>
-  ) : (
-    <Form.Select
-      name="unitName"
-      value={formData.unitName}
-      onChange={handleChange}
-      required
-    >
-      <option value="">--select--</option>
-      {familyUnits.map((unit) => (
-        <option key={unit.id} value={unit.name}>
-          {unit.name}
-        </option>
-      ))}
-    </Form.Select>
-  )}
+    ) : (
+      <>
+        <option value="">--select--</option>
+        {familyUnits.map((unit) => (
+          <option key={unit._id || unit.unitname} value={unit.unitname}>
+            {unit.unitname}
+          </option>
+        ))}
+      </>
+    )}
+  </Form.Select>
 </Form.Group>
+
 
                 <Form.Group className="mb-3">
                   <Form.Label>House Name (Eng) *</Form.Label>
@@ -498,12 +501,12 @@ const handleSubmit = async (e) => {
             <Card.Body>
               <Form.Group>
                 <Form.Label>Upload Family Photo</Form.Label>
-                <Form.Control
-                  type="file"
-                  name="familyPhoto"
-                  onChange={handleChange}
-                  value={formData.familyPhoto}
-                />
+             <Form.Control
+  type="file"
+  name="familyPhoto"
+  onChange={handleChange}
+/>
+
                 <Form.Text className="text-danger">* Max size: 1024KB</Form.Text>
               </Form.Group>
             </Card.Body>
@@ -539,12 +542,12 @@ const handleSubmit = async (e) => {
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>Photo</Form.Label>
-                      <Form.Control 
-                        type="file" 
-                        name="memberPhoto"
-                        onChange={handleChange}
-                        value={formData.memberPhoto}
-                      />
+                   <Form.Control 
+  type="file" 
+  name="memberPhoto"
+  onChange={handleChange}
+/>
+
                       <Form.Text className="text-danger">* Max size: 1024KB</Form.Text>
                     </Form.Group>
                   </Col>

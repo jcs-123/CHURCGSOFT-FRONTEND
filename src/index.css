@@ -43,3 +43,21 @@
   padding: 6px 12px;
   white-space: nowrap;
 }
+
+
+/* login page
+ */
+ .login-bg {
+  background-color: #d3d7df; /* Light gray as in your screenshot */
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background-color: #fff;
+  border-radius: 4px;
+}
+/* dashboard user  */
+.shadow-sm {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
